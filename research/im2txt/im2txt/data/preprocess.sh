@@ -30,15 +30,20 @@ WORK_DIR="$0.runfiles/im2txt/im2txt"
 function download_and_unzip() {
   local BASE_URL=${1}
   local FILENAME=${2}
+  local EXT=${3}
 
-  if [ ! -f ${FILENAME} ]; then
-    echo "Downloading ${FILENAME} to $(pwd)"
-    wget -nd -c "${BASE_URL}/${FILENAME}"
+  if [ ! -f ${FILENAME}.${EXT} ]; then
+    echo "Downloading ${FILENAME}.${EXT} to $(pwd)"
+    wget -nd -c "${BASE_URL}/${FILENAME}.${EXT}"
   else
-    echo "Skipping download of ${FILENAME}"
+    echo "Skipping download of ${FILENAME}.${EXT}"
   fi
-  echo "Unzipping ${FILENAME}"
-  ${UNZIP} ${FILENAME}
+  if [ ! -d ${FILENAME} ]; then
+    echo "Unzipping ${FILENAME}.${EXT}"
+    ${UNZIP} ${FILENAME}.${EXT}
+  else
+    echo "skipping unzip of ${FILENAME}.${EXT}"
+  fi
 }
 
 cd ${SCRATCH_DIR}
@@ -46,14 +51,15 @@ cd ${SCRATCH_DIR}
 # Todo Copy CraigsImgs to scratch
 TRAIN_IMAGE_DIR="${SCRATCH_DIR}/trainCraigscap"
 # Todo Copy CraigsCaps to scratch
-TRAIN_CAPTIONS_FILE="${SCRATCH_DIR}/annotations/captions_trainCraigscap.json"
+TRAIN_CAPTIONS_FILE="${SCRATCH_DIR}/annotations/captions_trainCraigscap.csv"
 
 
 # Download the images.
 BASE_IMAGE_URL="http://msvocds.blob.core.windows.net/coco2014"
 
-VAL_IMAGE_FILE="val2014.zip"
-download_and_unzip ${BASE_IMAGE_URL} ${VAL_IMAGE_FILE}
+VAL_IMAGE_FILE="val2014"
+VAL_IMAGE_FILE_EXT="zip"
+download_and_unzip ${BASE_IMAGE_URL} ${VAL_IMAGE_FILE} ${VAL_IMAGE_FILE_EXT}
 VAL_IMAGE_DIR="${SCRATCH_DIR}/val2014"
 
 exit
