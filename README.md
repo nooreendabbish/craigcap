@@ -1,4 +1,6 @@
-# TensorFlow Models
+# craigcap
+
+## Show an image of furniture to tell how it would be captioned in a Craigslist listing. 
 
 This repository contains a models implemented in [TensorFlow](https://tensorflow.org):
 
