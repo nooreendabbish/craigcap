@@ -5,6 +5,7 @@
 #  ./preprocess.sh [OUTPUT_DIR]
 set -e
 
+
 if [ -z "$1" ]; then
   echo "usage preproces.sh [data dir]"
   exit
@@ -17,12 +18,13 @@ else
 fi
 
 # Create the output directories.
-OUTPUT_DIR="${1%/}"
+OUTPUT_DIR="out/${1%/}"
 SCRATCH_DIR="${OUTPUT_DIR}/raw-data"
 mkdir -p "${OUTPUT_DIR}"
 mkdir -p "${SCRATCH_DIR}"
 CURRENT_DIR=$(pwd)
 WORK_DIR="$0.runfiles/im2txt/im2txt"
+
 
 # Helper function to download and unpack a .zip file.
 function download_and_unzip() {
@@ -54,6 +56,8 @@ VAL_IMAGE_FILE="val2014.zip"
 download_and_unzip ${BASE_IMAGE_URL} ${VAL_IMAGE_FILE}
 VAL_IMAGE_DIR="${SCRATCH_DIR}/val2014"
 
+exit
+
 # Download the captions.
 #BASE_CAPTIONS_URL="http://msvocds.blob.core.windows.net/annotations-1-0-3"
 #CAPTIONS_FILE="captions_train-val2014.zip"
@@ -65,6 +69,8 @@ VAL_CAPTIONS_FILE="${SCRATCH_DIR}/annotations/captions_val2014.json"
 # Build TFRecords of the image data.
 cd "${CURRENT_DIR}"
 BUILD_SCRIPT="${WORK_DIR}/build_mscoco_data"
+
+
 "${BUILD_SCRIPT}" \
   --train_image_dir="${TRAIN_IMAGE_DIR}" \
   --val_image_dir="${VAL_IMAGE_DIR}" \
