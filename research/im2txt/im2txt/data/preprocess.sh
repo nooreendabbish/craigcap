@@ -30,19 +30,19 @@ WORK_DIR="$0.runfiles/im2txt/im2txt"
 function download_and_unzip() {
   local BASE_URL=${1}
   local FILENAME=${2}
-  local EXT=${3}
+  local UNZIPPED_TEST=${3}
 
-  if [ ! -f ${FILENAME}.${EXT} ]; then
-    echo "Downloading ${FILENAME}.${EXT} to $(pwd)"
-    wget -nd -c "${BASE_URL}/${FILENAME}.${EXT}"
+  if [ ! -f ${FILENAME} ]; then
+    echo "Downloading ${FILENAME} to $(pwd)"
+    wget -nd -c "${BASE_URL}/${FILENAME}"
   else
-    echo "Skipping download of ${FILENAME}.${EXT}"
+    echo "Skipping download of ${FILENAME}"
   fi
-  if [ ! -d ${FILENAME} ]; then
-    echo "Unzipping ${FILENAME}.${EXT}"
-    ${UNZIP} ${FILENAME}.${EXT}
+  if [ ! -d ${UNZIPPED_TEST} ]; then
+    echo "Unzipping ${FILENAME}"
+    ${UNZIP} ${FILENAME}
   else
-    echo "skipping unzip of ${FILENAME}.${EXT}"
+    echo "Skipping unzip of ${FILENAME}"
   fi
 }
 
@@ -54,21 +54,20 @@ TRAIN_IMAGE_DIR="$craigscapImg"
 TRAIN_CAPTIONS_DIR="$craigcapAnno"
 
 
-# Download the images.
+# Download the base images.
 BASE_IMAGE_URL="http://msvocds.blob.core.windows.net/coco2014"
 
-VAL_IMAGE_FILE="val2014"
-VAL_IMAGE_FILE_EXT="zip"
-download_and_unzip ${BASE_IMAGE_URL} ${VAL_IMAGE_FILE} ${VAL_IMAGE_FILE_EXT}
+VAL_IMAGE_FILE="val2014.zip"
+VAL_IMAGE_UNZIPPED_TEST="val2014"
+download_and_unzip ${BASE_IMAGE_URL} ${VAL_IMAGE_FILE} ${VAL_IMAGE_UNZIPPED_TEST}
 VAL_IMAGE_DIR="${SCRATCH_DIR}/val2014"
 
 
-# Download the captions.
-#BASE_CAPTIONS_URL="http://msvocds.blob.core.windows.net/annotations-1-0-3"
-#CAPTIONS_FILE="captions_train-val2014.zip"
-#download_and_unzip ${BASE_CAPTIONS_URL} ${CAPTIONS_FILE}
-
-
+# Download the base captions.
+BASE_CAPTIONS_URL="http://msvocds.blob.core.windows.net/annotations-1-0-3"
+CAPTIONS_FILE="captions_train-val2014.zip"
+CAPTIONS_FILE_UNZIPPED_TEST="annotations"
+download_and_unzip ${BASE_CAPTIONS_URL} ${CAPTIONS_FILE} ${CAPTIONS_FILE_UNZIPPED_TEST}
 VAL_CAPTIONS_FILE="${SCRATCH_DIR}/annotations/captions_val2014.json"
 
 # Build TFRecords of the image data.
@@ -76,7 +75,7 @@ cd "${CURRENT_DIR}"
 BUILD_SCRIPT="./build_mscoco_data.py"
 
 
-"${BUILD_SCRIPT}" \
+echo "${BUILD_SCRIPT}" \
   --train_image_dir="${TRAIN_IMAGE_DIR}" \
   --val_image_dir="${VAL_IMAGE_DIR}" \
   --train_captions_dir="${TRAIN_CAPTIONS_DIR}" \
