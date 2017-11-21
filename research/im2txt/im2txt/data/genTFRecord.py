@@ -17,18 +17,18 @@
 The MSCOCO images are expected to reside in JPEG files located in the following
 directory structure:
 
-  train_image_dir/COCO_train2014_000000000151.jpg
-  train_image_dir/COCO_train2014_000000000260.jpg
+  craigcap_image_dir/COCO_train2014_000000000151.jpg
+  craigcap_image_dir/COCO_train2014_000000000260.jpg
   ...
 
 and
 
-  val_image_dir/COCO_val2014_000000000042.jpg
-  val_image_dir/COCO_val2014_000000000073.jpg
+  coco_image_dir/COCO_val2014_000000000042.jpg
+  coco_image_dir/COCO_val2014_000000000073.jpg
   ...
 
-The MSCOCO annotations JSON files are expected to reside in train_captions_dir
-and val_captions_file respectively.
+The MSCOCO annotations JSON files are expected to reside in craigcap_captions_dir
+and coco_captions_file respectively.
 
 This script converts the combined MSCOCO data into sharded data files consisting
 of 256, 4 and 8 TFRecord files, respectively:
@@ -99,14 +99,14 @@ import nltk.tokenize
 import numpy as np
 import tensorflow as tf
 
-tf.flags.DEFINE_string("train_image_dir", "/tmp/train2014/",
+tf.flags.DEFINE_string("craigcap_image_dir", "/tmp/train2014/",
                        "Training image directory.")
-tf.flags.DEFINE_string("val_image_dir", "/tmp/val2014",
+tf.flags.DEFINE_string("coco_image_dir", "/tmp/val2014",
                        "Validation image directory.")
 
-tf.flags.DEFINE_string("train_captions_dir", "/tmp/captions_train2014.json",
+tf.flags.DEFINE_string("craigcap_captions_dir", "/tmp/captions_train2014.json",
                        "Training captions JSON file.")
-tf.flags.DEFINE_string("val_captions_file", "/tmp/captions_val2014.json",
+tf.flags.DEFINE_string("coco_captions_file", "/tmp/captions_val2014.json",
                        "Validation captions JSON file.")
 
 tf.flags.DEFINE_string("output_dir", "/tmp/", "Output data directory.")
@@ -481,9 +481,13 @@ def _load_and_process_metadata_craigcap(captions_file, image_dir):
 
   return image_metadata
 
-def main(unused_argv):
-  return "yo"
+def printFlags():
+  print("\nthe flags that were passed to this python script:\n")
+  for key, value in tf.flags.FLAGS.__flags.items():
+    print("  "+'{:24}'.format(key)+ "\t:\t",value)
+  print("")
 
+def checkShards():
   def _is_valid_num_shards(num_shards):
     """Returns True if num_shards is compatible with FLAGS.num_threads."""
     return num_shards < FLAGS.num_threads or not num_shards % FLAGS.num_threads
@@ -495,15 +499,20 @@ def main(unused_argv):
   assert _is_valid_num_shards(FLAGS.test_shards), (
       "Please make the FLAGS.num_threads commensurate with FLAGS.test_shards")
 
+
+def main(unused_argv):
+  printFlags()
+
+  checkShards()
+
   if not tf.gfile.IsDirectory(FLAGS.output_dir):
     tf.gfile.MakeDirs(FLAGS.output_dir)
 
   # Load image metadata from caption files.
-  mscoco_train_dataset = _load_and_process_metadata_train(FLAGS.train_captions_dir,
-                                                    FLAGS.train_image_dir)
-  mscoco_val_dataset = _load_and_process_metadata_craigcap(FLAGS.val_captions_file,
-                                                  FLAGS.val_image_dir)
-
+  print(FLAGS)
+  mscoco_train_dataset = _load_and_process_metadata_train(FLAGS.craigcap_captions_dir, FLAGS.craigcap_image_dir)
+  mscoco_val_dataset = _load_and_process_metadata_craigcap(FLAGS.coco_captions_file, FLAGS.coco_image_dir)
+  return "yo"
   # Redistribute the MSCOCO data as follows:
   #   train_dataset = 100% of mscoco_train_dataset + 85% of mscoco_val_dataset.
   #   val_dataset = 5% of mscoco_val_dataset (for validation during training).

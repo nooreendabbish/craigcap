@@ -2,14 +2,11 @@
 
 
 # usage:
-#  ./preprocess.sh [OUTPUT_DIR]
+#  ./preprocess.sh
 set -e
 
 
-if [ -z "$1" ]; then
-  echo "usage preproces.sh [data dir]"
-  exit
-fi
+echo -e "\n\n\tpreprocess.sh - start\n\n"
 
 if [ "$(uname)" == "Darwin" ]; then
   UNZIP="tar -xf"
@@ -18,12 +15,11 @@ else
 fi
 
 # Create the output directories.
-OUTPUT_DIR="out/${1%/}"
-SCRATCH_DIR="${OUTPUT_DIR}/raw-data"
+OUTPUT_DIR="dl"
+SCRATCH_DIR="${OUTPUT_DIR}"
 mkdir -p "${OUTPUT_DIR}"
 mkdir -p "${SCRATCH_DIR}"
 CURRENT_DIR=$(pwd)
-WORK_DIR="$0.runfiles/im2txt/im2txt"
 
 
 # Helper function to download and unpack a .zip file.
@@ -49,9 +45,9 @@ function download_and_unzip() {
 cd ${SCRATCH_DIR}
 
 # Todo Copy CraigsImgs to scratch
-TRAIN_IMAGE_DIR="$craigscapImg"
+TRAIN_IMAGE_DIR="craigscapImg"
 # Todo Copy CraigsCaps to scratch
-TRAIN_CAPTIONS_DIR="$craigcapAnno"
+TRAIN_CAPTIONS_DIR="craigcapAnno"
 
 
 # Download the base images.
@@ -72,13 +68,20 @@ VAL_CAPTIONS_FILE="${SCRATCH_DIR}/annotations/captions_val2014.json"
 
 # Build TFRecords of the image data.
 cd "${CURRENT_DIR}"
-BUILD_SCRIPT="./build_mscoco_data.py"
+
+echo -e "\n\n\tpreprocess.sh - end\n\n"
+
+echo -e "\n\n\tstarting genTFRecord.py\n\n"
+
+python3 genTFRecord.py \
+  \
+  --coco_image_dir="${VAL_IMAGE_DIR}" \
+  --coco_captions_file="${VAL_CAPTIONS_FILE}" \
+  \
+  --craigcap_image_dir="${TRAIN_IMAGE_DIR}" \
+  --craigcap_captions_dir="${TRAIN_CAPTIONS_DIR}" \
+  \
+  --output_dir="out" \
+  --word_counts_output_file="out/word_counts.txt" \
 
 
-echo "${BUILD_SCRIPT}" \
-  --train_image_dir="${TRAIN_IMAGE_DIR}" \
-  --val_image_dir="${VAL_IMAGE_DIR}" \
-  --train_captions_dir="${TRAIN_CAPTIONS_DIR}" \
-  --val_captions_file="${VAL_CAPTIONS_FILE}" \
-  --output_dir="${OUTPUT_DIR}" \
-  --word_counts_output_file="${OUTPUT_DIR}/word_counts.txt" \
