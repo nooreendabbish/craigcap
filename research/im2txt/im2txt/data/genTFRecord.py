@@ -212,30 +212,29 @@ def _to_sequence_example(image, decoder, vocab):
     A SequenceExample proto.
   """
   with tf.gfile.FastGFile(image.filename, "r") as f:
-    encoded_image = f.read()
-
-  try:
-    decoder.decode_jpeg(encoded_image)
-  except (tf.errors.InvalidArgumentError, AssertionError):
-    print("Skipping file with invalid JPEG data: %s" % image.filename)
-    return
-
-  context = tf.train.Features(feature={
-      "image/image_id": _int64_feature(image.image_id),
-      "image/data": _bytes_feature(encoded_image),
-  })
-
-  assert len(image.captions) == 1
-  caption = image.captions[0]
-  caption_ids = [vocab.word_to_id(word) for word in caption]
-  feature_lists = tf.train.FeatureLists(feature_list={
-      "image/caption": _bytes_feature_list(caption),
-      "image/caption_ids": _int64_feature_list(caption_ids)
-  })
-  sequence_example = tf.train.SequenceExample(
-      context=context, feature_lists=feature_lists)
-
-  return sequence_example
+    try:
+      encoded_image = f.read()
+      decoder.decode_jpeg(encoded_image)
+      context = tf.train.Features(feature={
+          "image/image_id": _int64_feature(image.image_id),
+          "image/data": _bytes_feature(encoded_image),
+      })
+      assert len(image.captions) == 1
+      caption = image.captions[0]
+      caption_ids = [vocab.word_to_id(word) for word in caption]
+      feature_lists = tf.train.FeatureLists(feature_list={
+          "image/caption": _bytes_feature_list(caption),
+          "image/caption_ids": _int64_feature_list(caption_ids)
+      })
+      sequence_example = tf.train.SequenceExample(
+          context=context, feature_lists=feature_lists)
+      return sequence_example
+    except (tf.errors.InvalidArgumentError, AssertionError):
+      print("Skipping file with invalid JPEG data: %s" % image.filename)
+      return
+    except UnicodeDecodeError:
+      print("Skipping file because unicode decode error %s" % (image.filename))
+      return
 
 
 def _process_image_files(thread_index, ranges, name, images, decoder, vocab,
@@ -264,7 +263,9 @@ def _process_image_files(thread_index, ranges, name, images, decoder, vocab,
   num_images_in_thread = ranges[thread_index][1] - ranges[thread_index][0]
 
   counter = 0
-  for s in xrange(num_shards_per_batch):
+
+  # Changed xrange to range because we are running python3 not python2
+  for s in range(num_shards_per_batch):
     # Generate a sharded version of the file name, e.g. 'train-00002-of-00010'
     shard = thread_index * num_shards_per_batch + s
     output_filename = "%s-%.5d-of-%.5d" % (name, shard, num_shards)
@@ -320,7 +321,9 @@ def _process_dataset(name, images, vocab, num_shards):
   spacing = np.linspace(0, len(images), num_threads + 1).astype(np.int)
   ranges = []
   threads = []
-  for i in xrange(len(spacing) - 1):
+
+  # Changed xrange to range because we are running python3 not python2
+  for i in range(len(spacing) - 1):
     ranges.append([spacing[i], spacing[i + 1]])
 
   # Create a mechanism for monitoring when all threads are finished.
@@ -331,7 +334,9 @@ def _process_dataset(name, images, vocab, num_shards):
 
   # Launch a thread for each batch.
   print("Launching %d threads for spacings: %s" % (num_threads, ranges))
-  for thread_index in xrange(len(ranges)):
+  
+  # Changed xrange to range because we are running python3 not python2
+  for thread_index in range(len(ranges)):
     args = (thread_index, ranges, name, images, decoder, vocab, num_shards)
     t = threading.Thread(target=_process_image_files, args=args)
     t.start()
@@ -434,55 +439,56 @@ def _load_and_process_metadata_craigcap(captions_dir, image_dir):
 
   # take note!: we are only going to open the caption csv files for cities that are included in the craigcapImg directory. 
   # this allows us to (easily) run a subset of cities just by removing or adding subdirecties.
-  
+  id_to_filename = []
+  id_to_captions = {}
+
   for city in os.listdir(image_dir):
     
     with tf.gfile.FastGFile(os.path.join(captions_dir,city+".csv"), "r") as f:
       cityReader = csv.reader(f)
-      # caption_data = csv.load(f)
-
-      # Extract the filenames.
       
+      # Extract the filenames.      
       # if you want to give each image a unique file name based on row even if it is a dup:
       # id_to_filename = [ (city+str(idx), os.path.join(city,row[2]+".jpg")) for idx, row in enumerate(cityReader)]
       
-      
-      id_to_filename = [ (row[2], os.path.join(city,row[2]+".jpg")) for row in cityReader]
+      id_to_filename.extend( [ (row[2], os.path.join(city,row[2]+".jpg")) for row in cityReader if row[2] != ""] )
 
-      
-      id_to_filename = dedupe(id_to_filename,"id_to_filename")
-      
-
-      show(10, id_to_filename, city+" filenames")
-
-    # Extract the captions. Each image_id is associated with multiple captions.
-      id_to_captions = {}
-      
+      # Extract the captions. Each image_id is associated with multiple captions.
       # seek back to first row
       f.seek(0)
+
+     
       for row in cityReader:
-        image_id = row[2]
-        caption = row[1]
-        id_to_captions.setdefault(image_id, [])
-        id_to_captions[image_id].append(caption)
-
-      showd(10, id_to_captions, city+" captions")
-    # assert len(id_to_filename) == len(id_to_captions)
-    # assert set([x[0] for x in id_to_filename]) == set(id_to_captions.keys())
-    # print("Loaded caption metadata for %d images from %s" %
-    #       (len(id_to_filename), captions_file))
-
-    # # Process the captions and combine the data into a list of ImageMetadata.
-    # print("Processing captions.")
+        if row[2] != "":
+          image_id = row[2]
+          caption = row[1]
+          id_to_captions.setdefault(image_id, [])
+          id_to_captions[image_id].append(caption)
     
-    # num_captions = 0
-    # for image_id, base_filename in id_to_filename:
-    #   filename = os.path.join(image_dir, base_filename)
-    #   captions = [_process_caption(c) for c in id_to_captions[image_id]]
-    #   image_metadata.append(ImageMetadata(image_id, filename, captions))
-    #   num_captions += len(captions)
-    # print("Finished processing %d captions for %d images in %s" %
-    #       (num_captions, len(id_to_filename), captions_file))
+    print("\n\t+"+city+"\t\ttotal: "+str(len(id_to_filename)))
+
+
+  id_to_filename = dedupe(id_to_filename,"id_to_filename")
+
+  show(10, id_to_filename, "filenames")
+
+  showd(10, id_to_captions, "captions")
+
+  assert len(id_to_filename) == len(id_to_captions)
+  assert set([x[0] for x in id_to_filename]) == set(id_to_captions.keys())
+  print("Loaded caption metadata for %d images from %s and %s" % (len(id_to_filename), captions_dir, image_dir))
+
+  # Process the captions and combine the data into a list of ImageMetadata.
+  print("Processing captions.")
+  
+  num_captions = 0
+  for image_id, base_filename in id_to_filename:
+    filename = os.path.join(image_dir, base_filename)
+    captions = [_process_caption(c) for c in id_to_captions[image_id]]
+    image_metadata.append(ImageMetadata(image_id, filename, captions))
+    num_captions += len(captions)
+  print("Finished processing %d captions for %d images in %s and %s" %
+        (num_captions, len(id_to_filename), captions_dir, image_dir))
 
   return image_metadata
 
@@ -510,6 +516,10 @@ def _load_and_process_metadata_coco(captions_file, image_dir):
     caption = annotation["caption"]
     id_to_captions.setdefault(image_id, [])
     id_to_captions[image_id].append(caption)
+
+  show(10, id_to_filename, "filenames")
+
+  showd(10, id_to_captions, "captions")
 
   assert len(id_to_filename) == len(id_to_captions)
   assert set([x[0] for x in id_to_filename]) == set(id_to_captions.keys())
@@ -561,9 +571,11 @@ def main(unused_argv):
   # Load image metadata from caption files.
 
   mscoco_train_dataset = _load_and_process_metadata_craigcap(FLAGS.craigcap_captions_dir, FLAGS.craigcap_image_dir)
-  return "stop short"
+  
   
   mscoco_val_dataset = _load_and_process_metadata_coco(FLAGS.coco_captions_file, FLAGS.coco_image_dir)
+
+
 
   # Redistribute the MSCOCO data as follows:
   #   train_dataset = 100% of mscoco_train_dataset + 85% of mscoco_val_dataset.

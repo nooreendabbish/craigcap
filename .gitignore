@@ -5,3 +5,4 @@ __pycache__/
 
 
 research/im2txt/im2txt/data/dl/*
+research/im2txt/im2txt/data/out/*
