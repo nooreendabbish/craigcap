@@ -73,7 +73,7 @@ echo -e "\n\n\tpreprocess.sh - end\n\n"
 
 echo -e "\n\n\tstarting genTFRecord.py\n\n"
 
-python3 genTFRecord.py \
+python genTFRecord.py \
   \
   --coco_image_dir="${VAL_IMAGE_DIR}" \
   --coco_captions_file="${VAL_CAPTIONS_FILE}" \
