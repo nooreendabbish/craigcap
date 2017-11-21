@@ -4,5 +4,5 @@ __pycache__/
 *$py.class
 
 
-research/im2txt/im2txt/data/dl/*
-research/im2txt/im2txt/data/out/*
+data/dl/*
+data/out/*
