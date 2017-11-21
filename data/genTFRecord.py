@@ -435,7 +435,9 @@ def _load_and_process_metadata_craigcap(captions_dir, image_dir):
   # take note!: we are only going to open the caption csv files for cities that are included in the craigcapImg directory. 
   # this allows us to (easily) run a subset of cities just by removing or adding subdirecties.
   id_to_filename = []
+  ids = set()
   id_to_captions = {}
+
 
   for city in os.listdir(image_dir):
 
@@ -461,9 +463,13 @@ def _load_and_process_metadata_craigcap(captions_dir, image_dir):
       # if you want to give each image a unique file name based on row even if it is a dup:
       # id_to_filename = [ (city+str(idx), os.path.join(city,row[2]+".jpg")) for idx, row in enumerate(cityReader)]
       
-      id_to_filename.extend( [ (row[2], os.path.join(city,row[2]+".jpg")) for row in cityReader if (row[2] != "" and (row[2] in id_to_captions)) ] )
+      for row in cityReader:
+        x = row[2]
+        if x != "":
+          if x not in ids:
+            ids.add(x)
+            id_to_filename.append((x, os.path.join(city,x+".jpg")))
 
-    
     print("\n\t+"+city+"\t\timgs: %d\t\tcaps: %d" % (len(id_to_filename),len(id_to_captions) ))
 
 
