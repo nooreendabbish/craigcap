@@ -8,6 +8,9 @@ set -e
 
 echo -e "\n\n\tpreprocess.sh - start\n\n"
 
+# to download a city:
+# wget -r -nH --cut-dirs=2 --no-parent --reject="index.html*" http://imagebend.com/CL/CL/bend
+
 # if [ "$(uname)" == "Darwin" ]; then
 #   UNZIP="tar -xf"
 # else
