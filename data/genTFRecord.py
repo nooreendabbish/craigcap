@@ -12,6 +12,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
+
+# to call:
+#
+# python genTFRecord.py \
+# --craigcap_image_dir=craigcapImg \
+# --craigcap_captions_dir=craigcapAnno \
+# --output_dir=out \
+# --word_counts_output_file=out/word_counts.txt \
 """Converts craigcap data to TFRecord file format with SequenceExample protos.
 
 The craigcap images are expected to reside in JPEG files located in the following
@@ -89,13 +97,13 @@ import nltk.tokenize
 import numpy as np
 import tensorflow as tf
 
-tf.flags.DEFINE_string("craigcap_image_dir", "/tmp/train2014/",
+tf.flags.DEFINE_string("craigcap_image_dir", "craigcapImg",
                        "Training image directory.")
 
-tf.flags.DEFINE_string("craigcap_captions_dir", "/tmp/captions_train2014.json",
+tf.flags.DEFINE_string("craigcap_captions_dir", "craigcapAnno",
                        "Training captions JSON file.")
 
-tf.flags.DEFINE_string("output_dir", "/tmp/", "Output data directory.")
+tf.flags.DEFINE_string("output_dir", "out", "Output data directory.")
 
 tf.flags.DEFINE_integer("train_shards", 256,
                         "Number of shards in training TFRecord files.")
@@ -113,7 +121,7 @@ tf.flags.DEFINE_string("unknown_word", "<UNK>",
 tf.flags.DEFINE_integer("min_word_count", 4,
                         "The minimum number of occurrences of each word in the "
                         "training set for inclusion in the vocabulary.")
-tf.flags.DEFINE_string("word_counts_output_file", "/tmp/word_counts.txt",
+tf.flags.DEFINE_string("word_counts_output_file", "out/word_counts.txt",
                        "Output vocabulary file of word counts.")
 
 tf.flags.DEFINE_integer("num_threads", 8,
@@ -409,6 +417,13 @@ def dedupe(xs, desc):
   print("deduped " +str(before - len(xs))+" from "+desc)
   return xs
       
+def rmOrphans(xs, ys):
+  before = len(xs)
+  r = [x for x in xs if len([ykey for ykey in ys if ykey==x[0]]) > 0]
+  after = len(r)
+  print("\n\tremove orphans. Before: \t%d\t After: \t%d" %(before,after))
+  return r
+
 
 def _load_and_process_metadata_craigcap(captions_dir, image_dir):
   """Loads image metadata from a directory containing CSV files and processes the captions.
@@ -428,7 +443,10 @@ def _load_and_process_metadata_craigcap(captions_dir, image_dir):
   id_to_captions = {}
 
   for city in os.listdir(image_dir):
-    
+
+    if city == "summarycsv":
+      continue
+
     with tf.gfile.FastGFile(os.path.join(captions_dir,city+".csv"), "r") as f:
       cityReader = csv.reader(f)
       
@@ -450,10 +468,12 @@ def _load_and_process_metadata_craigcap(captions_dir, image_dir):
           id_to_captions.setdefault(image_id, [])
           id_to_captions[image_id].append(caption)
     
-    print("\n\t+"+city+"\t\ttotal: "+str(len(id_to_filename)))
+    print("\n\t+"+city+"\t\timgs: %d\t\tcaps: %d" % (len(id_to_filename),len(id_to_captions) ))
 
 
   id_to_filename = dedupe(id_to_filename,"id_to_filename")
+
+  id_to_filename = rmOrphans(id_to_filename, id_to_captions)
 
   show(10, id_to_filename, "filenames")
 
