@@ -88,6 +88,7 @@ from collections import Counter
 from collections import namedtuple
 from datetime import datetime
 import json
+import csv
 import os.path
 import random
 import sys
@@ -394,51 +395,99 @@ def _process_caption(caption):
   return tokenized_caption
 
 
-def _load_and_process_metadata_train(captions_file, image_dir):
-  """Loads image metadata from a JSON file and processes the captions.
+def show(n, xs, desc):
+  print("\n\tprinting first "+str(len(xs[0:n]))+" items of "+str(len(xs))+" for "+desc+"\n" )
+  for x in xs[0:n]:
+    print("\t\t"+str(x))
+  print("\n")
+
+
+def showd(n, xs, desc):
+  print("\n\tprinting first "+str(len(xs))+" items of "+str(len(xs))+" for "+desc+"\n" )
+  i=0
+  for k,v in xs.items():
+    print("\t\t('"+str(k)+"', "+str(v)+")")
+    i=i+1
+    if i==n:
+      break
+  print("\n")
+
+
+def dedupe(xs, desc):
+  before = len(xs)
+  xs = sorted(set(xs))
+  print("deduped " +str(before - len(xs))+" from "+desc)
+  return xs
+      
+
+def _load_and_process_metadata_craigcap(captions_dir, image_dir):
+  """Loads image metadata from a directory containing CSV files and processes the captions.
 
   Args:
-    captions_file: JSON file containing caption annotations.
-    image_dir: Directory containing the image files.
+    captions_dir: Directory containing CSV files for each city containing caption annotations.
+    image_dir: Directory containing subdirecties for each city with image files.
 
   Returns:
     A list of ImageMetadata.
   """
-  with tf.gfile.FastGFile(captions_file, "r") as f:
-    caption_data = json.load(f)
-
-  # Extract the filenames.
-  id_to_filename = [(x["id"], x["file_name"]) for x in caption_data["images"]]
-
-  # Extract the captions. Each image_id is associated with multiple captions.
-  id_to_captions = {}
-  for annotation in caption_data["annotations"]:
-    image_id = annotation["image_id"]
-    caption = annotation["caption"]
-    id_to_captions.setdefault(image_id, [])
-    id_to_captions[image_id].append(caption)
-
-  assert len(id_to_filename) == len(id_to_captions)
-  assert set([x[0] for x in id_to_filename]) == set(id_to_captions.keys())
-  print("Loaded caption metadata for %d images from %s" %
-        (len(id_to_filename), captions_file))
-
-  # Process the captions and combine the data into a list of ImageMetadata.
-  print("Processing captions.")
   image_metadata = []
-  num_captions = 0
-  for image_id, base_filename in id_to_filename:
-    filename = os.path.join(image_dir, base_filename)
-    captions = [_process_caption(c) for c in id_to_captions[image_id]]
-    image_metadata.append(ImageMetadata(image_id, filename, captions))
-    num_captions += len(captions)
-  print("Finished processing %d captions for %d images in %s" %
-        (num_captions, len(id_to_filename), captions_file))
+
+  # take note!: we are only going to open the caption csv files for cities that are included in the craigcapImg directory. 
+  # this allows us to (easily) run a subset of cities just by removing or adding subdirecties.
+  
+  for city in os.listdir(image_dir):
+    
+    with tf.gfile.FastGFile(os.path.join(captions_dir,city+".csv"), "r") as f:
+      cityReader = csv.reader(f)
+      # caption_data = csv.load(f)
+
+      # Extract the filenames.
+      
+      # if you want to give each image a unique file name based on row even if it is a dup:
+      # id_to_filename = [ (city+str(idx), os.path.join(city,row[2]+".jpg")) for idx, row in enumerate(cityReader)]
+      
+      
+      id_to_filename = [ (row[2], os.path.join(city,row[2]+".jpg")) for row in cityReader]
+
+      
+      id_to_filename = dedupe(id_to_filename,"id_to_filename")
+      
+
+      show(10, id_to_filename, city+" filenames")
+
+    # Extract the captions. Each image_id is associated with multiple captions.
+      id_to_captions = {}
+      
+      # seek back to first row
+      f.seek(0)
+      for row in cityReader:
+        image_id = row[2]
+        caption = row[1]
+        id_to_captions.setdefault(image_id, [])
+        id_to_captions[image_id].append(caption)
+
+      showd(10, id_to_captions, city+" captions")
+    # assert len(id_to_filename) == len(id_to_captions)
+    # assert set([x[0] for x in id_to_filename]) == set(id_to_captions.keys())
+    # print("Loaded caption metadata for %d images from %s" %
+    #       (len(id_to_filename), captions_file))
+
+    # # Process the captions and combine the data into a list of ImageMetadata.
+    # print("Processing captions.")
+    
+    # num_captions = 0
+    # for image_id, base_filename in id_to_filename:
+    #   filename = os.path.join(image_dir, base_filename)
+    #   captions = [_process_caption(c) for c in id_to_captions[image_id]]
+    #   image_metadata.append(ImageMetadata(image_id, filename, captions))
+    #   num_captions += len(captions)
+    # print("Finished processing %d captions for %d images in %s" %
+    #       (num_captions, len(id_to_filename), captions_file))
 
   return image_metadata
 
 
-def _load_and_process_metadata_craigcap(captions_file, image_dir):
+def _load_and_process_metadata_coco(captions_file, image_dir):
   """Loads image metadata from a JSON file and processes the captions.
 
   Args:
@@ -501,6 +550,7 @@ def checkShards():
 
 
 def main(unused_argv):
+
   printFlags()
 
   checkShards()
@@ -509,10 +559,12 @@ def main(unused_argv):
     tf.gfile.MakeDirs(FLAGS.output_dir)
 
   # Load image metadata from caption files.
-  print(FLAGS)
-  mscoco_train_dataset = _load_and_process_metadata_train(FLAGS.craigcap_captions_dir, FLAGS.craigcap_image_dir)
-  mscoco_val_dataset = _load_and_process_metadata_craigcap(FLAGS.coco_captions_file, FLAGS.coco_image_dir)
-  return "yo"
+
+  mscoco_train_dataset = _load_and_process_metadata_craigcap(FLAGS.craigcap_captions_dir, FLAGS.craigcap_image_dir)
+  return "stop short"
+  
+  mscoco_val_dataset = _load_and_process_metadata_coco(FLAGS.coco_captions_file, FLAGS.coco_image_dir)
+
   # Redistribute the MSCOCO data as follows:
   #   train_dataset = 100% of mscoco_train_dataset + 85% of mscoco_val_dataset.
   #   val_dataset = 5% of mscoco_val_dataset (for validation during training).

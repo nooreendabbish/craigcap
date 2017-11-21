@@ -45,8 +45,8 @@ function download_and_unzip() {
 cd ${SCRATCH_DIR}
 
 # Todo Copy CraigsImgs to scratch
-TRAIN_IMAGE_DIR="craigscapImg"
-# Todo Copy CraigsCaps to scratch
+TRAIN_IMAGE_DIR="craigcapImg"
+# Todo Copy CraigCaps to scratch
 TRAIN_CAPTIONS_DIR="craigcapAnno"
 
 
