@@ -417,12 +417,7 @@ def dedupe(xs, desc):
   print("deduped " +str(before - len(xs))+" from "+desc)
   return xs
       
-def rmOrphans(xs, ys):
-  before = len(xs)
-  r = [x for x in xs if len([ykey for ykey in ys if ykey==x[0]]) > 0]
-  after = len(r)
-  print("\n\tremove orphans. Before: \t%d\t After: \t%d" %(before,after))
-  return r
+
 
 
 def _load_and_process_metadata_craigcap(captions_dir, image_dir):
@@ -450,30 +445,30 @@ def _load_and_process_metadata_craigcap(captions_dir, image_dir):
     with tf.gfile.FastGFile(os.path.join(captions_dir,city+".csv"), "r") as f:
       cityReader = csv.reader(f)
       
-      # Extract the filenames.      
-      # if you want to give each image a unique file name based on row even if it is a dup:
-      # id_to_filename = [ (city+str(idx), os.path.join(city,row[2]+".jpg")) for idx, row in enumerate(cityReader)]
-      
-      id_to_filename.extend( [ (row[2], os.path.join(city,row[2]+".jpg")) for row in cityReader if row[2] != ""] )
 
       # Extract the captions. Each image_id is associated with multiple captions.
       # seek back to first row
-      f.seek(0)
-
-     
+           
       for row in cityReader:
         if row[2] != "":
           image_id = row[2]
           caption = row[1]
           id_to_captions.setdefault(image_id, [])
           id_to_captions[image_id].append(caption)
+
+      f.seek(0)
+      # Extract the filenames.      
+      # if you want to give each image a unique file name based on row even if it is a dup:
+      # id_to_filename = [ (city+str(idx), os.path.join(city,row[2]+".jpg")) for idx, row in enumerate(cityReader)]
+      
+      id_to_filename.extend( [ (row[2], os.path.join(city,row[2]+".jpg")) for row in cityReader if (row[2] != "" and (row[2] in id_to_captions)) ] )
+
     
     print("\n\t+"+city+"\t\timgs: %d\t\tcaps: %d" % (len(id_to_filename),len(id_to_captions) ))
 
 
   id_to_filename = dedupe(id_to_filename,"id_to_filename")
 
-  id_to_filename = rmOrphans(id_to_filename, id_to_captions)
 
   show(10, id_to_filename, "filenames")
 
