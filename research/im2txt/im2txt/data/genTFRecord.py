@@ -12,53 +12,47 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-"""Converts MSCOCO data to TFRecord file format with SequenceExample protos.
+"""Converts craigcap data to TFRecord file format with SequenceExample protos.
 
-The MSCOCO images are expected to reside in JPEG files located in the following
+The craigcap images are expected to reside in JPEG files located in the following
 directory structure:
 
-  craigcap_image_dir/COCO_train2014_000000000151.jpg
-  craigcap_image_dir/COCO_train2014_000000000260.jpg
+  craigcapImg/erie/00000_3GL6XnTmyaG.jpg
+  craigcapImg/sfbay/00000_4XL6XnTmyaQ.jpg
   ...
+
+
+The craigcap annotations CSV files are expected to reside in craigcapAnno directory
+
+This script converts the craigcapImg data into sharded data files consisting
+of 256, 8 and 8 TFRecord files, respectively:
+
+  out/train-00000-of-00256
+  out/train-00001-of-00256
+  ...
+  out/train-00255-of-00256
 
 and
 
-  coco_image_dir/COCO_val2014_000000000042.jpg
-  coco_image_dir/COCO_val2014_000000000073.jpg
+  out/val-00000-of-00008
   ...
-
-The MSCOCO annotations JSON files are expected to reside in craigcap_captions_dir
-and coco_captions_file respectively.
-
-This script converts the combined MSCOCO data into sharded data files consisting
-of 256, 4 and 8 TFRecord files, respectively:
-
-  output_dir/train-00000-of-00256
-  output_dir/train-00001-of-00256
-  ...
-  output_dir/train-00255-of-00256
+  out/val-00003-of-00008
 
 and
 
-  output_dir/val-00000-of-00004
+  out/test-00000-of-00008
   ...
-  output_dir/val-00003-of-00004
+  out/test-00007-of-00008
 
-and
-
-  output_dir/test-00000-of-00008
-  ...
-  output_dir/test-00007-of-00008
-
-Each TFRecord file contains ~2300 records. Each record within the TFRecord file
+Each TFRecord file contains ~(TODO) records. Each record within the TFRecord file
 is a serialized SequenceExample proto consisting of precisely one image-caption
-pair. Note that each image has multiple captions (usually 5) and therefore each
-image is replicated multiple times in the TFRecord files.
+pair. Note that each image has could have multiple and therefore an
+image could replicated multiple times in the TFRecord files.
 
 The SequenceExample proto contains the following fields:
 
   context:
-    image/image_id: integer MSCOCO image identifier
+    image/image_id: string craigcap image identifier taken from filename
     image/data: string containing JPEG encoded image in RGB colorspace
 
   feature_lists:
@@ -70,14 +64,9 @@ The vocabulary of word identifiers is constructed from the sorted list (by
 descending frequency) of word tokens in the training set. Only tokens appearing
 at least 4 times are considered; all other words get the "unknown" word id.
 
-NOTE: This script will consume around 100GB of disk space because each image
-in the MSCOCO dataset is replicated ~5 times (once per caption) in the output.
-This is done for two reasons:
-  1. In order to better shuffle the training data.
-  2. It makes it easier to perform asynchronous preprocessing of each image in
-     TensorFlow.
+NOTE: This script will consume around (TODO)GB of disk space.
 
-Running this script using 16 threads may take around 1 hour on a HP Z420.
+Running this script using 16 threads may take around (TODO) hour on a mid level 2014 pc.
 """
 
 from __future__ import absolute_import
@@ -102,19 +91,15 @@ import tensorflow as tf
 
 tf.flags.DEFINE_string("craigcap_image_dir", "/tmp/train2014/",
                        "Training image directory.")
-tf.flags.DEFINE_string("coco_image_dir", "/tmp/val2014",
-                       "Validation image directory.")
 
 tf.flags.DEFINE_string("craigcap_captions_dir", "/tmp/captions_train2014.json",
                        "Training captions JSON file.")
-tf.flags.DEFINE_string("coco_captions_file", "/tmp/captions_val2014.json",
-                       "Validation captions JSON file.")
 
 tf.flags.DEFINE_string("output_dir", "/tmp/", "Output data directory.")
 
 tf.flags.DEFINE_integer("train_shards", 256,
                         "Number of shards in training TFRecord files.")
-tf.flags.DEFINE_integer("val_shards", 4,
+tf.flags.DEFINE_integer("val_shards", 8,
                         "Number of shards in validation TFRecord files.")
 tf.flags.DEFINE_integer("test_shards", 8,
                         "Number of shards in testing TFRecord files.")
@@ -216,7 +201,7 @@ def _to_sequence_example(image, decoder, vocab):
       encoded_image = f.read()
       decoder.decode_jpeg(encoded_image)
       context = tf.train.Features(feature={
-          "image/image_id": _int64_feature(image.image_id),
+          "image/image_id": _bytes_feature(image.image_id), # we are using the filename string as the identifier instead of an int
           "image/data": _bytes_feature(encoded_image),
       })
       assert len(image.captions) == 1
@@ -493,53 +478,6 @@ def _load_and_process_metadata_craigcap(captions_dir, image_dir):
   return image_metadata
 
 
-def _load_and_process_metadata_coco(captions_file, image_dir):
-  """Loads image metadata from a JSON file and processes the captions.
-
-  Args:
-    captions_file: JSON file containing caption annotations.
-    image_dir: Directory containing the image files.
-
-  Returns:
-    A list of ImageMetadata.
-  """
-  with tf.gfile.FastGFile(captions_file, "r") as f:
-    caption_data = json.load(f)
-
-  # Extract the filenames.
-  id_to_filename = [(x["id"], x["file_name"]) for x in caption_data["images"]]
-
-  # Extract the captions. Each image_id is associated with multiple captions.
-  id_to_captions = {}
-  for annotation in caption_data["annotations"]:
-    image_id = annotation["image_id"]
-    caption = annotation["caption"]
-    id_to_captions.setdefault(image_id, [])
-    id_to_captions[image_id].append(caption)
-
-  show(10, id_to_filename, "filenames")
-
-  showd(10, id_to_captions, "captions")
-
-  assert len(id_to_filename) == len(id_to_captions)
-  assert set([x[0] for x in id_to_filename]) == set(id_to_captions.keys())
-  print("Loaded caption metadata for %d images from %s" %
-        (len(id_to_filename), captions_file))
-
-  # Process the captions and combine the data into a list of ImageMetadata.
-  print("Processing captions.")
-  image_metadata = []
-  num_captions = 0
-  for image_id, base_filename in id_to_filename:
-    filename = os.path.join(image_dir, base_filename)
-    captions = [_process_caption(c) for c in id_to_captions[image_id]]
-    image_metadata.append(ImageMetadata(image_id, filename, captions))
-    num_captions += len(captions)
-  print("Finished processing %d captions for %d images in %s" %
-        (num_captions, len(id_to_filename), captions_file))
-
-  return image_metadata
-
 def printFlags():
   print("\nthe flags that were passed to this python script:\n")
   for key, value in tf.flags.FLAGS.__flags.items():
@@ -570,22 +508,18 @@ def main(unused_argv):
 
   # Load image metadata from caption files.
 
-  mscoco_train_dataset = _load_and_process_metadata_craigcap(FLAGS.craigcap_captions_dir, FLAGS.craigcap_image_dir)
+  craigcap_dataset = _load_and_process_metadata_craigcap(FLAGS.craigcap_captions_dir, FLAGS.craigcap_image_dir)
   
-  
-  mscoco_val_dataset = _load_and_process_metadata_coco(FLAGS.coco_captions_file, FLAGS.coco_image_dir)
 
-
-
-  # Redistribute the MSCOCO data as follows:
-  #   train_dataset = 100% of mscoco_train_dataset + 85% of mscoco_val_dataset.
-  #   val_dataset = 5% of mscoco_val_dataset (for validation during training).
-  #   test_dataset = 10% of mscoco_val_dataset (for final evaluation).
-  train_cutoff = int(0.85 * len(mscoco_val_dataset))
-  val_cutoff = int(0.90 * len(mscoco_val_dataset))
-  train_dataset = mscoco_train_dataset + mscoco_val_dataset[0:train_cutoff]
-  val_dataset = mscoco_val_dataset[train_cutoff:val_cutoff]
-  test_dataset = mscoco_val_dataset[val_cutoff:]
+  # Redistribute the craigcap data as follows:
+  #   train_dataset = 94% of craigcap_dataset.
+  #   val_dataset   =  3% of craigcap_dataset (for validation during training).
+  #   test_dataset  =  3% of craigcap_dataset (for final evaluation).
+  train_cutoff = int(0.94 * len(craigcap_dataset))
+  val_cutoff = int(0.97 * len(craigcap_dataset))
+  train_dataset = craigcap_dataset[0:train_cutoff]
+  val_dataset = craigcap_dataset[train_cutoff:val_cutoff]
+  test_dataset = craigcap_dataset[val_cutoff:]
 
   # Create vocabulary from the training captions.
   train_captions = [c for image in train_dataset for c in image.captions]
