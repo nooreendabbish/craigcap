@@ -13,6 +13,8 @@
 # limitations under the License.
 # ==============================================================================
 
+# python genTFRecord.py --craigcap_image_dir=craigcapImg
+
 # to call:
 #
 # python genTFRecord.py \
@@ -533,11 +535,11 @@ def main(unused_argv):
   
 
   # Redistribute the craigcap data as follows:
-  #   train_dataset = 94% of craigcap_dataset.
-  #   val_dataset   =  3% of craigcap_dataset (for validation during training).
-  #   test_dataset  =  3% of craigcap_dataset (for final evaluation).
-  train_cutoff = int(0.94 * len(craigcap_dataset))
-  val_cutoff = int(0.97 * len(craigcap_dataset))
+  #   train_dataset = 80% of craigcap_dataset.
+  #   val_dataset   = 10% of craigcap_dataset (for validation during training).
+  #   test_dataset  = 10% of craigcap_dataset (for final evaluation).
+  train_cutoff = int(0.8 * len(craigcap_dataset))
+  val_cutoff = int(0.9 * len(craigcap_dataset))
   train_dataset = craigcap_dataset[0:train_cutoff]
   val_dataset = craigcap_dataset[train_cutoff:val_cutoff]
   test_dataset = craigcap_dataset[val_cutoff:]
