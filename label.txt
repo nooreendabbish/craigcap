@@ -1,0 +1,108 @@
+Captions for image 1.jpg:
+  0) desk (p=0.036715)
+  1) ikea lack desk (p=0.006610)
+  2) ikea micke desk (p=0.004499)
+Captions for image 2.jpg:
+  0) bedroom set (p=0.023709)
+  1) queen bedroom set (p=0.022412)
+  2) queen bed (p=0.006462)
+Captions for image 3.jpg:
+  0) rocking chair (p=0.161931)
+  1) glider rocker (p=0.022942)
+  2) vintage rocking chair (p=0.013645)
+Captions for image 4.jpg:
+  0) bedroom set (p=0.041696)
+  1) queen bedroom set (p=0.026980)
+  2) twin bed (p=0.012419)
+Captions for image 5.jpg:
+  0) desk (p=0.046234)
+  1) computer desk (p=0.035193)
+  2) office desk (p=0.014161)
+Captions for image 6.jpg:
+  0) leather couch (p=0.079819)
+  1) couch (p=0.025458)
+  2) leather sofa (p=0.023074)
+Captions for image 7.jpg:
+  0) sofa (p=0.034280)
+  1) couch (p=0.032287)
+  2) love seat (p=0.027938)
+Captions for image 8.jpg:
+  0) queen mattress (p=0.007141)
+  1) king size mattress (p=0.006116)
+  2) queen size mattress (p=0.004360)
+Captions for image 9.jpg:
+  0) <UNK> (p=0.004605)
+  1) metal bed frame (p=0.002418)
+  2) metal bed frames (p=0.001199)
+Captions for image 10.jpg:
+  0) dresser (p=0.026979)
+  1) bedroom set (p=0.025852)
+  2) dresser and mirror (p=0.018865)
+Captions for image 11.jpg:
+  0) coffee table (p=0.071254)
+  1) end table (p=0.017157)
+  2) coffee table and end table (p=0.016007)
+Captions for image 12.jpg:
+  0) antique rocking chair (p=0.014537)
+  1) solid oak rocking chair (p=0.004505)
+  2) solid oak chair (p=0.004097)
+Captions for image 13.jpg:
+  0) antique rocking chair (p=0.007851)
+  1) white wicker chair (p=0.001780)
+  2) vintage solid wood rocking chair (p=0.000185)
+Captions for image 14.jpg:
+  0) tv stand (p=0.256728)
+  1) entertainment center (p=0.040169)
+  2) tv cabinet (p=0.011171)
+Captions for image 15.jpg:
+  0) mirror (p=0.078605)
+  1) large mirror (p=0.014025)
+  2) framed picture (p=0.009363)
+Captions for image 16.jpg:
+  0) lamp (p=0.084761)
+  1) table lamp (p=0.032048)
+  2) vintage lamp (p=0.013501)
+Captions for image 17.jpg:
+  0) coffee table (p=0.054523)
+  1) dining room table (p=0.024947)
+  2) dining table (p=0.020430)
+Captions for image 18.jpg:
+  0) desk (p=0.069539)
+  1) tv stand (p=0.054840)
+  2) computer desk (p=0.040105)
+Captions for image 19.jpg:
+  0) love seat (p=0.051515)
+  1) couch (p=0.046836)
+  2) sofa (p=0.038787)
+Captions for image 20.jpg:
+  0) french provincial bedroom set (p=0.002779)
+  1) french provincial dresser (p=0.002408)
+  2) french provincial dresser with mirror (p=0.000818)
+Captions for image 21.jpg:
+  0) desk (p=0.140887)
+  1) antique desk (p=0.024324)
+  2) vintage desk (p=0.012614)
+Captions for image 22.jpg:
+  0) solid wood desk (p=0.000941)
+  1) solid wood twin headboard (p=0.000471)
+  2) solid wood twin bed (p=0.000284)
+Captions for image 23.jpg:
+  0) coffee table (p=0.071122)
+  1) end table (p=0.040460)
+  2) end tables (p=0.014093)
+Captions for image 24.jpg:
+  0) rocking chair (p=0.060906)
+  1) solid oak rocking chair (p=0.010300)
+  2) solid wood rocking chair (p=0.010204)
+Captions for image 25.jpg:
+  0) picture (p=0.041129)
+  1) framed picture (p=0.010686)
+  2) <UNK> (p=0.007419)
+Captions for image 26.jpg:
+  0) dining room table (p=0.054874)
+  1) kitchen table (p=0.033605)
+  2) dining table (p=0.024603)
+Captions for image 27.jpg:
+  0) kitchen island (p=0.041949)
+  1) tv stand (p=0.018200)
+  2) kitchen cabinet (p=0.007214)

@@ -1,0 +1,4 @@
+Captions for image 1.jpg:
+  0) desk (p=0.036715)
+  1) ikea lack desk (p=0.006610)
+  2) ikea micke desk (p=0.004499)
