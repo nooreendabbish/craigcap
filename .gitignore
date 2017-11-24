@@ -9,3 +9,5 @@ data/out/*
 
 data/craigcapImg/*
 !data/craigcapImg/erie
+i3.ckpt
+model/*

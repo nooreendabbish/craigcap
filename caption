@@ -1,0 +1,1 @@
+python run_inference.py --checkpoint_path=model --vocab_file=data/out/word_counts.txt --input_files=$1

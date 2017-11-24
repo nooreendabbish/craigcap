@@ -1,0 +1,1 @@
+python train.py --input_file_pattern=data/out/train-?????-of-00256 --inception_checkpoint_file=i3.ckpt --train_dir=model --train_inception=false --number_of_steps=$1
